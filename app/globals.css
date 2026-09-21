@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette */
+  --color-cream: #f6f1e7;
+  --color-cream-50: #fdfbf7;
+  --color-cream-200: #ece3d2;
+  --color-walnut: #4a3126;
+  --color-walnut-700: #603f31;
+  --color-walnut-400: #8a6a58;
+  --color-gold: #c9a84c;
+  --color-gold-300: #ddc77e;
+
+  --radius-card: 12px;
+}
+
+@theme inline {
+  --font-display: var(--font-playfair);
+  --font-body: var(--font-inter);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Sticky nav is ~80px tall; keep anchor targets clear of it. */
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-walnut);
+    font-family: var(--font-body), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-gold) 35%, transparent);
+  }
+}
+
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Soft, warm elevation only — never a hard drop shadow. */
+@utility shadow-soft {
+  box-shadow: 0 1px 2px rgb(74 49 38 / 0.04), 0 8px 24px rgb(74 49 38 / 0.07);
+}
+
+@utility shadow-soft-lg {
+  box-shadow: 0 2px 4px rgb(74 49 38 / 0.05), 0 16px 40px rgb(74 49 38 / 0.1);
+}
