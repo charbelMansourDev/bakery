@@ -2,16 +2,27 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { put } from '@vercel/blob';
 
 /**
- * Uploaded images are written to ./uploads (outside public/) and served by
- * GET /api/media/[...path].
+ * Two storage backends behind one function, chosen by environment:
  *
- * Why not public/uploads, as is conventional? In next@15.5 the public-folder
- * index is a boot-time directory scan (guarded by `if (!opts.dev)`) with
- * negative lookups LRU-cached, so a file written there after startup 404s under
- * `next build && next start` until the server restarts — while working fine in
- * `next dev`. A route handler behaves identically in both.
+ * - Vercel Blob when BLOB_READ_WRITE_TOKEN is set (i.e. on Vercel). Its
+ *   filesystem is ephemeral, so anything written to disk there is gone on the
+ *   next deploy — uploads have to leave the container.
+ * - The local ./uploads directory otherwise, served by GET /api/media, so
+ *   `npm run dev` works with no Blob store and no token.
+ *
+ * Why ./uploads and not public/uploads for the local path: Next indexes the
+ * public folder at boot in production and caches negative lookups, so a file
+ * written there after startup 404s under `next build && next start` until the
+ * server restarts, while working fine in `next dev`. A route handler behaves
+ * identically in both.
+ *
+ * `imageUrl` therefore holds one of three shapes, and every reader must cope:
+ *   /images/classic.jpg                      seeded, static
+ *   /api/media/<uuid>.jpg                    uploaded locally
+ *   https://<store>.public.blob.vercel-storage.com/<uuid>.jpg   uploaded on Vercel
  */
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
@@ -34,6 +45,11 @@ export class UploadError extends Error {}
 
 type UploadedFile = { arrayBuffer(): Promise<ArrayBuffer>; type: string; size: number };
 
+/** True when uploads go to Vercel Blob rather than the local disk. */
+export function usingBlobStorage(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
 /** Duck-typed so it works whether FormData yields a File or a Blob. */
 export function asUploadedFile(value: unknown): UploadedFile | null {
   if (!value || typeof value !== 'object') return null;
@@ -43,7 +59,7 @@ export function asUploadedFile(value: unknown): UploadedFile | null {
   return candidate as UploadedFile;
 }
 
-/** Saves the upload and returns the public URL to store in `imageUrl`. */
+/** Saves the upload and returns the URL to store in `imageUrl`. */
 export async function saveUpload(file: UploadedFile): Promise<string> {
   const ext = MIME_TO_EXT[file.type];
   if (!ext) {
@@ -59,14 +75,25 @@ export async function saveUpload(file: UploadedFile): Promise<string> {
     throw new UploadError('Image is too large. The limit is 4 MB.');
   }
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
   const filename = `${randomUUID()}.${ext}`;
-  await writeFile(path.join(UPLOAD_DIR, filename), buffer);
 
+  if (usingBlobStorage()) {
+    const { url } = await put(filename, buffer, {
+      access: 'public',
+      contentType: file.type,
+      // The filename is already a UUID; a random suffix would only make the
+      // stored path differ from what we asked for.
+      addRandomSuffix: false,
+    });
+    return url;
+  }
+
+  await mkdir(UPLOAD_DIR, { recursive: true });
+  await writeFile(path.join(UPLOAD_DIR, filename), buffer);
   return `/api/media/${filename}`;
 }
 
-/** Reads an uploaded file, refusing anything that escapes the uploads dir. */
+/** Reads a locally-stored upload, refusing anything that escapes the uploads dir. */
 export async function readUpload(
   segments: string[],
 ): Promise<{ body: Buffer; contentType: string } | null> {

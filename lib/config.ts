@@ -2,8 +2,8 @@
 
 /**
  * WhatsApp number that the "Review Order" button opens, in international format,
- * digits only, no leading "+". Supplied as the local number 71032883; Lebanon
- * (+961) is assumed. Change this one line if the country code is different.
+ * digits only, no leading "+". Lebanon (+961) prefixed onto the bakery's local
+ * number 71032883. Override per-environment with NEXT_PUBLIC_WHATSAPP_NUMBER.
  */
 export const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '96171032883';

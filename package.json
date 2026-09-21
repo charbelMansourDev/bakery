@@ -10,25 +10,26 @@
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.0",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.12",
+    "mongoose": "^8.24.4",
+    "next": "15.5.25",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.25",
-    "mongoose": "^8.24.4",
-    "jose": "^6.2.12",
-    "bcryptjs": "^3.0.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
-    "@eslint/eslintrc": "^3",
+    "tailwindcss": "^4",
     "tsx": "^4.20.0",
-    "dotenv": "^16.4.7"
+    "typescript": "^5"
   }
 }

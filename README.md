@@ -106,23 +106,28 @@ treated as an authorization boundary.
 
 ## Uploads
 
-Uploaded images are written to `./uploads/` (gitignored) and served by
-`GET /api/media/[...path]` — **not** `public/uploads/`.
+Image uploads have two backends, picked by environment — one function, one
+stored URL shape per backend:
 
-This is deliberate. Next.js indexes the `public/` folder once at boot in
+| Environment | Where uploads go | Stored `imageUrl` |
+|---|---|---|
+| Vercel (`BLOB_READ_WRITE_TOKEN` set) | Vercel Blob | `https://<store>.public.blob.vercel-storage.com/<uuid>.jpg` |
+| Local dev (no token) | `./uploads/` (gitignored) | `/api/media/<uuid>.jpg` |
+
+**Why not `public/uploads/`?** Next indexes the `public/` folder once at boot in
 production and caches negative lookups, so a file written there after startup
-404s under `next build && next start` until the server restarts, while working
-perfectly in `next dev`. Serving through a route handler behaves identically in
-both. Seeded products still point at static files in `public/images/`; both
-kinds of path render fine.
+404s under `next build && next start` until the server restarts — while working
+perfectly in `next dev`. A route handler behaves identically in both.
+
+**Why Blob on Vercel?** Its filesystem is ephemeral. Anything written to disk is
+gone on the next deploy, so uploads have to leave the container.
+
+Seeded products still point at static files in `public/images/`, so `imageUrl`
+can hold any of three shapes and every reader copes with all of them.
 
 Uploads are capped at 4 MB and limited to JPEG, PNG and WebP. The stored
 extension comes from the file's MIME type, never its filename, and filenames are
 UUIDs.
-
-> On a serverless host such as Vercel the filesystem is ephemeral, so uploads
-> would not survive a redeploy. That version needs object storage (S3, R2,
-> Vercel Blob) — out of scope here.
 
 ---
 
