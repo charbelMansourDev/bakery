@@ -19,7 +19,6 @@ export default function Hero() {
           72.16%. Uniform rather than a gradient, so the whole frame darkens
           evenly and the copy reads wherever it sits. */}
       <div className="absolute inset-0 bg-[#21150F]/[0.7216]" />
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-cream to-transparent" />
 
       <div className="relative mx-auto w-full max-w-6xl px-6 pt-20 pb-16 lg:px-10">
         <div className="max-w-xl text-center lg:text-left">
