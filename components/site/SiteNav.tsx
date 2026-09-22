@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BAKERY, NAV_LINKS } from '@/lib/config';
+import AccountButton from './AccountButton';
 
 /**
  * `transparentOverHero` is a prop, not something derived from `window`, because
@@ -92,7 +93,9 @@ export default function SiteNav({ transparentOverHero = false }: { transparentOv
           })}
         </ul>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <AccountButton solid={solid} />
+
           <Link
             href="/menu"
             className="rounded-lg bg-gold px-4 py-2.5 text-xs font-semibold tracking-wide text-walnut transition hover:bg-gold-300 sm:px-6 sm:text-sm"

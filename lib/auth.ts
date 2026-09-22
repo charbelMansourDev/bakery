@@ -1,7 +1,7 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
 import { NextResponse } from 'next/server';
-import { getSession, type SessionPayload } from './session';
+import { getAdminSession, getCustomerSession, type AdminSession, type CustomerSession } from './session';
 
 /**
  * The real authorization gate. Middleware only handles redirect UX — it is not
@@ -10,23 +10,38 @@ import { getSession, type SessionPayload } from './session';
  * mutating route handler calls into this module first.
  */
 
-/** For Server Components: redirects to the login page when signed out. */
-export async function requireAdmin(): Promise<SessionPayload> {
-  const session = await getSession();
+type ApiGuard<T> = { ok: true; session: T } | { ok: false; response: NextResponse };
+
+function unauthorized(): NextResponse {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+
+/* ---------- admin ---------- */
+
+/** For Server Components: redirects to the admin login when signed out. */
+export async function requireAdmin(): Promise<AdminSession> {
+  const session = await getAdminSession();
   if (!session) redirect('/admin/login');
   return session;
 }
 
 /** For Route Handlers: returns a 401 response instead of redirecting. */
-export async function requireAdminApi(): Promise<
-  { ok: true; session: SessionPayload } | { ok: false; response: NextResponse }
-> {
-  const session = await getSession();
+export async function requireAdminApi(): Promise<ApiGuard<AdminSession>> {
+  const session = await getAdminSession();
+  return session ? { ok: true, session } : { ok: false, response: unauthorized() };
+}
+
+/* ---------- customer ---------- */
+
+export async function requireCustomer(returnTo?: string): Promise<CustomerSession> {
+  const session = await getCustomerSession();
   if (!session) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    redirect(returnTo ? `/account/login?from=${encodeURIComponent(returnTo)}` : '/account/login');
   }
-  return { ok: true, session };
+  return session;
+}
+
+export async function requireCustomerApi(): Promise<ApiGuard<CustomerSession>> {
+  const session = await getCustomerSession();
+  return session ? { ok: true, session } : { ok: false, response: unauthorized() };
 }

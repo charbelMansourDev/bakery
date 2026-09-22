@@ -39,6 +39,7 @@ cp .env.example .env.local
 | `ADMIN_PASSWORD` | Admin password. Bcrypt-hashed by the seed script — never stored in plaintext. |
 | `SESSION_SECRET` | Signs the session JWT. Generate with `openssl rand -base64 32`. |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | Optional. Overrides the number in `lib/config.ts`. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` | Nodemailer, for customer sign-in codes. Unset in dev prints the code to the server console; production refuses to sign anyone in without it. |
 
 If you use MongoDB Atlas, add your IP to the cluster's Network Access allowlist,
 or the seed will hang and then fail with a server-selection timeout.
@@ -82,8 +83,9 @@ nothing.
 
 ### CMS
 
-One admin, products only. Log in at `/admin/login`, manage at `/admin/products`
-— add, edit, delete and replace images.
+One admin. Log in at `/admin/login`, then manage products at `/admin/products`
+(add, edit, delete, replace images) and the Our Story photographs at
+`/admin/story`.
 
 Auth is a signed JWT in an httpOnly cookie. `middleware.ts` does an optimistic
 check so a signed-out admin gets redirected rather than seeing a flash of the
@@ -100,7 +102,54 @@ treated as an authorization boundary.
 | `PATCH` / `DELETE /api/products/:id` | Admin |
 | `POST /api/upload` | Admin |
 | `GET /api/media/:file` | Public (serves uploaded images) |
-| `POST /api/auth/login` · `POST /api/auth/logout` | — |
+| `POST /api/auth/login` · `POST /api/auth/logout` | Admin session |
+| `POST /api/account/request-code` · `verify-code` · `logout` | Public (rate limited) |
+| `GET` / `PUT` / `DELETE /api/cart` | Signed-in customer |
+| `GET /api/story` | Public |
+| `PATCH /api/story` | Admin |
+
+---
+
+## Accounts and the cart
+
+Two separate audiences, two separate sessions.
+
+**Customers** sign in with a 6-digit code emailed by Nodemailer. Signing up and
+signing in are the same flow — the first verified code for an unseen address
+creates the account. There are no customer passwords to store, reset or leak.
+
+An account is required to order, so the cart itself requires sign-in: tapping a
+product while signed out redirects to `/account/login?from=…` and returns you
+afterwards. There is no guest cart and no merge step.
+
+The cart lives in MongoDB, one per customer, so it survives a reload and follows
+them between devices. It stores product *ids* and resolves them on read — a
+price edited in the CMS is immediately the price the customer sees, and a
+product deleted from the menu drops out of every cart holding it rather than
+lingering at a stale price. Writes replace the whole cart rather than sending a
+diff, so two rapid taps cannot interleave.
+
+### Why the two sessions cannot be confused
+
+Admin and customer tokens are signed with the same `SESSION_SECRET`, so without
+care a customer token would satisfy an admin check. Three independent guards, in
+`lib/jwt.ts`:
+
+1. Separate cookies — `bakery_admin` and `bakery_customer`.
+2. `aud` is set to the role and verification passes `audience`, so `jose` itself
+   rejects a cross-role token before our code sees the payload.
+3. The `role` claim is re-checked against what the caller asked for.
+
+Admin sessions last 8 hours; customer sessions last 30 days.
+
+### Sign-in code handling
+
+Codes are 6 digits — only ~20 bits, so the protection is the limits around them,
+not their entropy: bcrypt-hashed at rest, single use, 10-minute expiry, 5 wrong
+attempts before the code dies, and 5 requests per address per 15 minutes so the
+endpoint cannot be used to mail-bomb. Requesting a code returns the same
+response whether or not the address is registered, so it cannot enumerate
+customers. Expired rows are removed by a MongoDB TTL index rather than a sweeper.
 
 ---
 
@@ -156,5 +205,5 @@ the CMS or drop a file over the existing name:
 
 ## Not built, on purpose
 
-No payment or checkout · no order persistence or history · no customer accounts ·
-no email on the ideas form · one admin, no roles.
+No payment or checkout · no order persistence or history (the cart is not an
+order) · no email on the ideas form · one admin, no roles.

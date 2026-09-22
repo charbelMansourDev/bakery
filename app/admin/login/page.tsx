@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import LoginForm from '@/components/admin/LoginForm';
-import { getSession } from '@/lib/session';
+import { getAdminSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ from?: string }>;
 }) {
-  if (await getSession()) redirect('/admin/products');
+  if (await getAdminSession()) redirect('/admin/products');
 
   const { from } = await searchParams;
   // Only accept an internal path, so ?from= cannot be used as an open redirect.

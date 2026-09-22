@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { compare } from 'bcryptjs';
 import dbConnect from '@/lib/db';
 import Admin from '@/models/Admin';
-import { createSessionCookie } from '@/lib/session';
+import { createAdminSession } from '@/lib/session';
 import { loginSchema } from '@/lib/validation';
 
 // A bcrypt hash of a random string. Compared against when the username does not
@@ -25,6 +25,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Incorrect username or password.' }, { status: 401 });
   }
 
-  await createSessionCookie({ sub: String(admin._id), username: admin.username });
+  await createAdminSession({ sub: String(admin._id), username: admin.username });
   return NextResponse.json({ ok: true });
 }

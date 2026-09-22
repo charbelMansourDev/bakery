@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import LogoutButton from '@/components/admin/LogoutButton';
-import { getSession } from '@/lib/session';
+import { getAdminSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export const metadata = { title: 'CMS · La Belle Fournée' };
  * whether the page may render — each page calls requireAdmin() for that.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const session = await getAdminSession();
 
   return (
     <div className="min-h-dvh bg-slate-50 font-sans text-slate-900">

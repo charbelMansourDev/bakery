@@ -40,3 +40,29 @@ export const storyUpdateSchema = z
   });
 
 export type StoryUpdateInput = z.infer<typeof storyUpdateSchema>;
+
+export const requestCodeSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.').max(200),
+});
+
+export const verifyCodeSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.').max(200),
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from your email.'),
+});
+
+export const cartReplaceSchema = z.object({
+  // An empty string means "no base loaf". Without collapsing it to null it
+  // reaches Mongoose as '' and blows up the ObjectId cast with a 500 instead of
+  // simply clearing the base.
+  baseId: z
+    .string()
+    .trim()
+    .max(64)
+    .nullable()
+    .default(null)
+    .transform((value) => value || null),
+  addOnIds: z
+    .array(z.string().trim().max(64).min(1))
+    .max(20)
+    .default([]),
+});

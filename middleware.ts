@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SESSION_COOKIE, verifySession } from '@/lib/jwt';
+import { ADMIN_COOKIE, verifySession } from '@/lib/jwt';
 
 /**
  * Optimistic auth check only — it exists so a signed-out admin gets a redirect
@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   // static literals.
   if (pathname === '/admin/login') return NextResponse.next();
 
-  const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
+  const session = await verifySession(request.cookies.get(ADMIN_COOKIE)?.value, 'admin');
   if (session) return NextResponse.next();
 
   if (pathname.startsWith('/api/')) {
