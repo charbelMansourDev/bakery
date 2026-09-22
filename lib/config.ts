@@ -1,21 +1,29 @@
 /** Bakery-wide constants. Shared by server and client components. */
 
 /**
- * WhatsApp number that the "Review Order" button opens, in international format,
- * digits only, no leading "+". Lebanon (+961) prefixed onto the bakery's local
- * number 71032883. Override per-environment with NEXT_PUBLIC_WHATSAPP_NUMBER.
+ * WhatsApp number that the "Review Order" button opens, in E.164: digits only,
+ * no leading "+".
+ *
+ * The bakery's number is written locally as 03 229 666. The leading 0 is
+ * Lebanon's national trunk prefix and is DROPPED when dialling internationally,
+ * so the E.164 form is +961 3 229 666 -> 9613229666, not 96103229666. Keeping
+ * the 0 would produce a wa.me link that resolves to nothing.
+ *
+ * Override per-environment with NEXT_PUBLIC_WHATSAPP_NUMBER.
  */
 export const WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '96171032883';
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '9613229666';
 
 export const BAKERY = {
   name: 'La Belle Fournée',
   tagline: 'Artisan Bakery',
   email: 'bonjour@labellefournee.com',
-  phone: '+961 71 032 883',
-  address: '18 Rue du Levain',
+  phone: '+961 3 229 666',
+  address: 'Main Road, Amioun',
   footerTagline: 'Pre-Order • Freshly Baked • Limited Batches',
   legal: 'La Belle Fournée · Maison Dorée',
+  /** Instagram handle, without the @. The bakery has no other social accounts. */
+  instagram: 'labellefournee',
 } as const;
 
 export const NAV_LINKS = [
