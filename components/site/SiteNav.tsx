@@ -132,12 +132,16 @@ export default function SiteNav({ transparentOverHero = false }: { transparentOv
                 <Link
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="eyebrow block border-b border-cream-200 py-4 text-walnut-400 transition-colors last:border-b-0 hover:text-walnut"
+                  className="eyebrow block border-b border-cream-200 py-4 text-walnut-400 transition-colors hover:text-walnut"
                 >
                   {link.label}
                 </Link>
               </li>
             ))}
+
+            {/* The inline account control is hidden on small screens, so the
+                mobile menu carries it instead. */}
+            <AccountButton variant="menu" onNavigate={() => setMenuOpen(false)} />
           </ul>
         </div>
       )}
