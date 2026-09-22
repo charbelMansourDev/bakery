@@ -24,3 +24,22 @@ export const NAV_LINKS = [
   { label: 'Our Story', href: '/#story' },
   { label: 'Have an Idea?', href: '/#have-an-idea' },
 ] as const;
+
+/**
+ * Photographs for the "Our Story" section. Drop files into public/images/ and
+ * point these at them. An empty `src` renders a warm placeholder rather than a
+ * broken image, so the layout holds up until the real photographs exist.
+ *
+ * Shoot/crop `primary` at 4:5 portrait and `secondary` at 3:4 — the section
+ * reserves those ratios, so anything else gets cropped to fit.
+ */
+export const STORY_IMAGES = {
+  primary: {
+    src: '',
+    alt: 'Shaping a sourdough loaf by hand at the bench',
+  },
+  secondary: {
+    src: '',
+    alt: 'Wrapping a finished pre-order for collection',
+  },
+} as const;

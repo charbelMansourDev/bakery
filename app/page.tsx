@@ -7,6 +7,7 @@ import ProductCard from '@/components/site/ProductCard';
 import SectionDivider from '@/components/site/SectionDivider';
 import SiteNav from '@/components/site/SiteNav';
 import StickyOrderBar from '@/components/site/StickyOrderBar';
+import StorySection from '@/components/site/StorySection';
 import { getProducts, groupByCategory } from '@/lib/products';
 
 // Rendered per request so a change made in the CMS shows up immediately.
@@ -43,20 +44,7 @@ export default async function HomePage() {
         </section>
 
         {/* Our Story */}
-        <section id="story" className="bg-walnut text-cream">
-          <div className="mx-auto max-w-3xl px-6 py-20 text-center lg:px-10">
-            <p className="eyebrow text-gold">Our Story</p>
-            <h2 className="mt-4 font-display text-4xl lg:text-5xl">Flour, water, salt, time.</h2>
-            <p className="mt-6 font-display text-lg italic leading-relaxed text-cream/80">
-              We keep one starter, fed every morning since the day we opened. Every loaf is mixed by
-              hand, rested overnight, and baked at dawn in small batches — which is why we bake to
-              order, and why there is never quite enough.
-            </p>
-            <div className="mt-10 flex justify-center">
-              <SectionDivider />
-            </div>
-          </div>
-        </section>
+        <StorySection />
 
         {/* Make It Yours preview */}
         <section className="mx-auto max-w-6xl px-6 py-20 lg:px-10">
