@@ -35,11 +35,11 @@ export const NAV_LINKS = [
  */
 export const STORY_IMAGES = {
   primary: {
-    src: '',
-    alt: 'Shaping a sourdough loaf by hand at the bench',
+    src: '/images/story-shaping.jpg',
+    alt: 'Shaping a sourdough loaf by hand on a flour-dusted bench',
   },
   secondary: {
-    src: '',
-    alt: 'Wrapping a finished pre-order for collection',
+    src: '/images/story-wrapping.jpg',
+    alt: 'A finished loaf wrapped in paper and twine, ready for collection',
   },
 } as const;
