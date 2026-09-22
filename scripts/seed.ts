@@ -18,6 +18,8 @@ import mongoose from 'mongoose';
 import { hash } from 'bcryptjs';
 import Product from '../models/Product';
 import Admin from '../models/Admin';
+import Story, { STORY_SINGLETON } from '../models/Story';
+import { STORY_IMAGES } from '../lib/config';
 import type { Category } from '../types/product';
 
 type SeedProduct = {
@@ -71,6 +73,25 @@ async function main() {
   console.log(
     `Products: ${result.upsertedCount} inserted, ${result.modifiedCount} updated, ` +
       `${PRODUCTS.length - result.upsertedCount - result.modifiedCount} already current.`,
+  );
+
+  // Seed the Our Story photographs only if nothing is there yet — $setOnInsert
+  // so re-seeding never clobbers images the bakery uploaded through the CMS.
+  const story = await Story.updateOne(
+    { singleton: STORY_SINGLETON },
+    {
+      $setOnInsert: {
+        singleton: STORY_SINGLETON,
+        primary: { url: STORY_IMAGES.primary.src, alt: STORY_IMAGES.primary.alt },
+        secondary: { url: STORY_IMAGES.secondary.src, alt: STORY_IMAGES.secondary.alt },
+      },
+    },
+    { upsert: true },
+  );
+  console.log(
+    story.upsertedCount
+      ? 'Our Story: seeded the default photographs.'
+      : 'Our Story: already set, left untouched.',
   );
 
   const passwordHash = await hash(password!, 10);

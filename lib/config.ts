@@ -26,12 +26,14 @@ export const NAV_LINKS = [
 ] as const;
 
 /**
- * Photographs for the "Our Story" section. Drop files into public/images/ and
- * point these at them. An empty `src` renders a warm placeholder rather than a
- * broken image, so the layout holds up until the real photographs exist.
+ * Fallback photographs for the "Our Story" section.
  *
- * Shoot/crop `primary` at 4:5 portrait and `secondary` at 3:4 — the section
- * reserves those ratios, so anything else gets cropped to fit.
+ * These are NOT the source of truth — the live images are managed in the CMS at
+ * /admin/story and stored in MongoDB (see lib/story.ts). This is what renders
+ * before anything has been saved, and what a fresh clone of the repo shows, so
+ * the landing page never looks half-built.
+ *
+ * `primary` is cropped to 4:5 and `secondary` to 3:4 by the section.
  */
 export const STORY_IMAGES = {
   primary: {

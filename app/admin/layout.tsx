@@ -22,9 +22,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/products" className="text-sm font-semibold text-slate-900">
                 La Belle Fournée CMS
               </Link>
-              <Link href="/" className="text-sm text-slate-500 transition hover:text-slate-900">
-                View site ↗
-              </Link>
+              <nav className="flex items-center gap-5">
+                <Link
+                  href="/admin/products"
+                  className="text-sm text-slate-500 transition hover:text-slate-900"
+                >
+                  Products
+                </Link>
+                <Link
+                  href="/admin/story"
+                  className="text-sm text-slate-500 transition hover:text-slate-900"
+                >
+                  Our Story
+                </Link>
+                <Link href="/" className="text-sm text-slate-500 transition hover:text-slate-900">
+                  View site ↗
+                </Link>
+              </nav>
             </div>
             <div className="flex items-center gap-4">
               <span className="hidden text-sm text-slate-500 sm:inline">{session.username}</span>

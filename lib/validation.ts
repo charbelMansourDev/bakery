@@ -22,3 +22,21 @@ export const loginSchema = z.object({
 
 export type ProductCreateInput = z.infer<typeof productCreateSchema>;
 export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
+
+const storyImageSchema = z.object({
+  url: z.string().trim().max(500).default(''),
+  alt: z.string().trim().max(200).default(''),
+});
+
+/** Both halves are optional so the form can save one photograph at a time. */
+export const storyUpdateSchema = z
+  .object({
+    primary: storyImageSchema,
+    secondary: storyImageSchema,
+  })
+  .partial()
+  .refine((value) => value.primary !== undefined || value.secondary !== undefined, {
+    message: 'Nothing to update.',
+  });
+
+export type StoryUpdateInput = z.infer<typeof storyUpdateSchema>;
