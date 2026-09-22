@@ -62,7 +62,7 @@ export default async function HomePage() {
                 <h3 className="eyebrow shrink-0 text-walnut-400">Savory</h3>
                 <span className="h-px flex-1 bg-gold/30" aria-hidden="true" />
               </div>
-              <ul className="divide-y divide-cream-200">
+              <ul className="space-y-2.5">
                 {savory.map((product) => (
                   <AddOnRow key={product.id} product={product} />
                 ))}
@@ -74,7 +74,7 @@ export default async function HomePage() {
                 <h3 className="eyebrow shrink-0 text-walnut-400">Sweet</h3>
                 <span className="h-px flex-1 bg-gold/30" aria-hidden="true" />
               </div>
-              <ul className="divide-y divide-cream-200">
+              <ul className="space-y-2.5">
                 {sweet.map((product) => (
                   <AddOnRow key={product.id} product={product} />
                 ))}
