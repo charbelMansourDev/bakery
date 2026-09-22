@@ -47,7 +47,7 @@ export default function MenuBrowser({
       </div>
 
       {showBase && (
-        <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-10">
+        <section id="base-loaves" className="mx-auto max-w-6xl px-6 pb-16 lg:px-10">
           <SectionLabel>Base Loaves</SectionLabel>
           {base.length === 0 ? (
             <Empty what="base loaves" />
