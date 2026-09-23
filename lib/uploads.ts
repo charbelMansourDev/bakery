@@ -7,11 +7,17 @@ import { put } from '@vercel/blob';
 /**
  * Two storage backends behind one function, chosen by environment:
  *
- * - Vercel Blob when BLOB_READ_WRITE_TOKEN is set (i.e. on Vercel). Its
- *   filesystem is ephemeral, so anything written to disk there is gone on the
- *   next deploy — uploads have to leave the container.
+ * - Vercel Blob when a store is connected (i.e. on Vercel). Its filesystem is
+ *   ephemeral, so anything written to disk there is gone on the next deploy —
+ *   uploads have to leave the container.
  * - The local ./uploads directory otherwise, served by GET /api/media, so
  *   `npm run dev` works with no Blob store and no token.
+ *
+ * Detecting the store: a Blob connection injects credentials one of two ways.
+ * A classic read-write connection sets BLOB_READ_WRITE_TOKEN; a newer OIDC
+ * connection sets BLOB_STORE_ID instead (and put() authenticates with the
+ * runtime-injected VERCEL_OIDC_TOKEN). Either marker means Blob is available —
+ * checking only the token misses OIDC and wrongly falls through to disk.
  *
  * Why ./uploads and not public/uploads for the local path: Next indexes the
  * public folder at boot in production and caches negative lookups, so a file
@@ -47,7 +53,8 @@ type UploadedFile = { arrayBuffer(): Promise<ArrayBuffer>; type: string; size: n
 
 /** True when uploads go to Vercel Blob rather than the local disk. */
 export function usingBlobStorage(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  // BLOB_READ_WRITE_TOKEN = classic connection; BLOB_STORE_ID = OIDC connection.
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 }
 
 /** Duck-typed so it works whether FormData yields a File or a Blob. */
