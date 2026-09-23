@@ -32,6 +32,10 @@ export async function POST(request: Request) {
     }
     // Surface the real cause in the server logs — a bare 500 is undebuggable.
     console.error('Upload failed:', err);
-    return NextResponse.json({ error: 'Upload failed.' }, { status: 500 });
+    // This route is admin-only, so echoing the underlying reason leaks nothing
+    // to the public and saves a log dive when a Blob store is misconfigured
+    // (e.g. a private store rejecting a public upload).
+    const reason = err instanceof Error ? err.message : 'Upload failed.';
+    return NextResponse.json({ error: reason }, { status: 500 });
   }
 }
