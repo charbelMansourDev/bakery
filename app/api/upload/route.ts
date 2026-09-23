@@ -30,6 +30,8 @@ export async function POST(request: Request) {
     if (err instanceof UploadError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
+    // Surface the real cause in the server logs — a bare 500 is undebuggable.
+    console.error('Upload failed:', err);
     return NextResponse.json({ error: 'Upload failed.' }, { status: 500 });
   }
 }

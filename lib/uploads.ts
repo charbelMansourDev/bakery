@@ -88,6 +88,17 @@ export async function saveUpload(file: UploadedFile): Promise<string> {
     return url;
   }
 
+  // The local-disk path only works where the filesystem is writable — i.e. dev.
+  // On Vercel the working directory is read-only (only /tmp is writable), so a
+  // write here throws EROFS and surfaces as an opaque 500. Fail loudly with a
+  // message the admin can act on instead, mirroring how the mailer refuses to
+  // run unconfigured in production.
+  if (process.env.NODE_ENV === 'production') {
+    throw new UploadError(
+      'Image storage is not configured. Connect a Vercel Blob store to the project and redeploy.',
+    );
+  }
+
   await mkdir(UPLOAD_DIR, { recursive: true });
   await writeFile(path.join(UPLOAD_DIR, filename), buffer);
   return `/api/media/${filename}`;
