@@ -24,6 +24,10 @@ function describeLine(line: CartLineDTO): string {
   return `- ${line.addOn.name} ${formatCents(line.addOn.price)} + ${loaf} = ${formatCents(line.totalCents)}`;
 }
 
+export function buildIdeaMessage(idea: string): string {
+  return [`Hello ${BAKERY.name}! I have a flavor idea for a sourdough:`, '', idea.trim()].join('\n');
+}
+
 export function buildOrderMessage(lines: CartLineDTO[], totalCents: number): string {
   return [
     `Hello ${BAKERY.name}! I would like to pre-order:`,

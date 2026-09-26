@@ -1,19 +1,29 @@
 'use client';
 
 import { useState } from 'react';
+import { buildIdeaMessage, whatsappUrl } from '@/lib/whatsapp';
 
 /**
- * Front-end only by design: no persistence, no email. Submitting just
- * acknowledges the idea.
+ * Sends the idea to the bakery over WhatsApp, the same channel as orders. No
+ * account needed and nothing is stored: submitting opens WhatsApp with the idea
+ * already written, and it reaches the bakery when the visitor presses send
+ * there — so the confirmation says exactly that rather than claiming it has
+ * already arrived.
  */
 export default function IdeaBanner() {
   const [idea, setIdea] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  /** The link we opened, kept as a fallback in case the browser blocked it. */
+  const [sentUrl, setSentUrl] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!idea.trim()) return;
-    setSubmitted(true);
+    const text = idea.trim();
+    if (!text) return;
+
+    const url = whatsappUrl(buildIdeaMessage(text));
+    // Opened inside the submit handler — a user gesture — so browsers allow it.
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setSentUrl(url);
     setIdea('');
   }
 
@@ -30,18 +40,29 @@ export default function IdeaBanner() {
           </div>
 
           <div>
-            {submitted ? (
+            {sentUrl ? (
               <div
                 role="status"
                 className="rounded-lg border border-gold/50 bg-cream/5 px-6 py-5 text-center"
               >
                 <p className="font-display text-2xl text-gold">Thanks!</p>
                 <p className="mt-1 text-sm text-cream/75">
-                  We&rsquo;ve noted your idea — keep an eye on the menu.
+                  WhatsApp opened with your idea — press send there and it comes straight to us.
+                </p>
+                <p className="mt-3 text-xs text-cream/60">
+                  Didn&rsquo;t open?{' '}
+                  <a
+                    href={sentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gold underline underline-offset-4 transition hover:text-gold-300"
+                  >
+                    Open WhatsApp
+                  </a>
                 </p>
                 <button
                   type="button"
-                  onClick={() => setSubmitted(false)}
+                  onClick={() => setSentUrl(null)}
                   className="mt-4 text-xs font-semibold tracking-wide text-gold underline underline-offset-4 transition hover:text-gold-300"
                 >
                   Share another
@@ -58,14 +79,15 @@ export default function IdeaBanner() {
                   value={idea}
                   onChange={(event) => setIdea(event.target.value)}
                   placeholder="Your flavor combination"
+                  maxLength={500}
                   className="min-w-0 flex-1 rounded-lg border border-cream/20 bg-cream/95 px-4 py-3.5 text-sm text-walnut placeholder:text-walnut-400/70 focus:border-gold focus:ring-2 focus:ring-gold/40 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="rounded-lg bg-gold px-8 py-3.5 text-sm font-semibold tracking-wide text-walnut transition hover:bg-gold-300 disabled:opacity-50"
+                  className="rounded-lg bg-gold px-8 py-3.5 text-sm font-semibold tracking-wide whitespace-nowrap text-walnut transition hover:bg-gold-300 disabled:opacity-50"
                   disabled={!idea.trim()}
                 >
-                  Submit
+                  Send via WhatsApp
                 </button>
               </form>
             )}
