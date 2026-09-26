@@ -2,7 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import dbConnect from './db';
 import Story, { STORY_SINGLETON } from '@/models/Story';
-import { STORY_IMAGES } from './config';
+import { STORY_IMAGES, STORY_TEXT } from './config';
 import type { StoryDTO } from '@/types/story';
 
 /**
@@ -14,12 +14,18 @@ import type { StoryDTO } from '@/types/story';
  */
 
 type LeanStory = {
+  heading?: string;
+  body?: string;
   primary?: { url?: string; alt?: string };
   secondary?: { url?: string; alt?: string };
 };
 
 function toStoryDTO(doc: LeanStory | null): StoryDTO {
   return {
+    // The document predates these fields, so absent means "use the default" —
+    // no migration needed.
+    heading: doc?.heading || STORY_TEXT.heading,
+    body: doc?.body || STORY_TEXT.body,
     primary: {
       url: doc?.primary?.url || STORY_IMAGES.primary.src,
       alt: doc?.primary?.alt || STORY_IMAGES.primary.alt,
@@ -50,6 +56,8 @@ export async function updateStory(input: Partial<StoryDTO>): Promise<StoryDTO> {
   // value keeps the document complete and the validators meaningful.
   const current = await readStory();
   const next: StoryDTO = {
+    heading: input.heading ?? current.heading,
+    body: input.body ?? current.body,
     primary: input.primary ?? current.primary,
     secondary: input.secondary ?? current.secondary,
   };

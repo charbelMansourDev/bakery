@@ -43,17 +43,21 @@ export default async function StorySection() {
           {/* Copy */}
           <div>
             <p className="eyebrow text-gold">Our Story</p>
-            <h2 className="mt-4 font-display text-4xl lg:text-5xl">Flour, water, salt, time.</h2>
+            <h2 className="mt-4 font-display text-4xl lg:text-5xl">{story.heading}</h2>
 
-            <p className="mt-6 font-display text-lg italic leading-relaxed text-cream/80">
-              We keep one starter, fed every morning since the day we opened. Every loaf is mixed
-              by hand, rested overnight, and baked at dawn in small batches.
-            </p>
-            <p className="mt-4 font-display text-lg italic leading-relaxed text-cream/80">
-              Each pre-order is shaped for the person who asked for it, then wrapped by hand before
-              it leaves the kitchen. That is why we bake to order, and why there is never quite
-              enough.
-            </p>
+            {/* Edited in the CMS as plain text: a blank line starts a new paragraph. */}
+            {story.body
+              .split(/\n\s*\n/)
+              .map((paragraph) => paragraph.trim())
+              .filter(Boolean)
+              .map((paragraph, index) => (
+                <p
+                  key={index}
+                  className={`${index === 0 ? 'mt-6' : 'mt-4'} font-display text-lg italic leading-relaxed text-cream/80`}
+                >
+                  {paragraph}
+                </p>
+              ))}
 
             <div className="mt-10">
               <SectionDivider full={false} className="mx-0" />

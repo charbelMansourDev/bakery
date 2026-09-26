@@ -53,6 +53,8 @@ function Slot({
 
 export default function StoryForm({ story }: { story: StoryDTO }) {
   const router = useRouter();
+  const [heading, setHeading] = useState(story.heading);
+  const [body, setBody] = useState(story.body);
   const [primary, setPrimary] = useState(story.primary);
   const [secondary, setSecondary] = useState(story.secondary);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export default function StoryForm({ story }: { story: StoryDTO }) {
     const response = await fetch('/api/story', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ primary, secondary }),
+      body: JSON.stringify({ heading, body, primary, secondary }),
     });
 
     if (!response.ok) {
@@ -86,6 +88,41 @@ export default function StoryForm({ story }: { story: StoryDTO }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900">Story text</h2>
+        <p className="mt-1 mb-5 text-sm text-slate-500">
+          The heading and paragraphs beside the photographs.
+        </p>
+
+        <label htmlFor="story-heading" className="block text-sm font-medium text-slate-700">
+          Heading
+        </label>
+        <input
+          id="story-heading"
+          value={heading}
+          onChange={(event) => setHeading(event.target.value)}
+          required
+          maxLength={120}
+          className={FIELD}
+        />
+
+        <label htmlFor="story-body" className="mt-5 block text-sm font-medium text-slate-700">
+          Text
+        </label>
+        <textarea
+          id="story-body"
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          required
+          rows={8}
+          maxLength={2000}
+          className={FIELD}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Leave a blank line between paragraphs.
+        </p>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Slot
           idPrefix="primary"

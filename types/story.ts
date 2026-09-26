@@ -10,6 +10,9 @@ export type StoryImageDTO = {
  * Component. Mirrors ProductDTO's role for products.
  */
 export type StoryDTO = {
+  heading: string;
+  /** Paragraphs separated by a blank line. */
+  body: string;
   primary: StoryImageDTO;
   secondary: StoryImageDTO;
 };

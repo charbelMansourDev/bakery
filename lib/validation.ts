@@ -28,14 +28,16 @@ const storyImageSchema = z.object({
   alt: z.string().trim().max(200).default(''),
 });
 
-/** Both halves are optional so the form can save one photograph at a time. */
+/** Every field is optional so the form can save part of the story at a time. */
 export const storyUpdateSchema = z
   .object({
+    heading: z.string().trim().min(1, 'The story needs a heading.').max(120),
+    body: z.string().trim().min(1, 'The story needs some text.').max(2000),
     primary: storyImageSchema,
     secondary: storyImageSchema,
   })
   .partial()
-  .refine((value) => value.primary !== undefined || value.secondary !== undefined, {
+  .refine((value) => Object.values(value).some((field) => field !== undefined), {
     message: 'Nothing to update.',
   });
 

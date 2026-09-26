@@ -20,6 +20,12 @@ const storySchema = new Schema(
     singleton: { type: String, required: true, unique: true, default: 'story' },
     primary: { type: storyImageSchema, required: true, default: () => ({ url: '', alt: '' }) },
     secondary: { type: storyImageSchema, required: true, default: () => ({ url: '', alt: '' }) },
+    // Not `required`: a required String rejects '', and with `upsert` Mongoose
+    // validates as though inserting — the same trap the photos hit. Empty means
+    // "never saved", and lib/story.ts falls back to the defaults in lib/config.ts.
+    heading: { type: String, default: '', trim: true },
+    /** Paragraphs separated by a blank line. */
+    body: { type: String, default: '', trim: true },
   },
   { timestamps: true },
 );

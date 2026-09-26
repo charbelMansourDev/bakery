@@ -33,6 +33,18 @@ export const NAV_LINKS = [
 ] as const;
 
 /**
+ * Fallback text for the "Our Story" section — what renders until the bakery
+ * saves its own at /admin/story. `body` is paragraphs separated by a blank line.
+ */
+export const STORY_TEXT = {
+  heading: 'Flour, water, salt, time.',
+  body: [
+    'We keep one starter, fed every morning since the day we opened. Every loaf is mixed by hand, rested overnight, and baked at dawn in small batches.',
+    'Each pre-order is shaped for the person who asked for it, then wrapped by hand before it leaves the kitchen. That is why we bake to order, and why there is never quite enough.',
+  ].join('\n\n'),
+} as const;
+
+/**
  * Fallback photographs for the "Our Story" section.
  *
  * These are NOT the source of truth — the live images are managed in the CMS at
