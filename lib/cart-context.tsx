@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ProductDTO } from '@/types/product';
 import { makeLine, totalOf, type CartDTO, type CartLineDTO } from '@/types/cart';
 
@@ -71,6 +71,36 @@ export function CartProvider({
     setLines(next);
   }, []);
 
+  /** Bumped on every local change, so a slow server read can tell it is stale. */
+  const generation = useRef(0);
+
+  /**
+   * A full page load can render the cart server-side while the previous page's
+   * write is still in flight, and show the cart as it was *before* that write.
+   * Because writes replace the whole cart, the customer's next tap would then
+   * send that stale list back — resurrecting an item they had just removed.
+   *
+   * So once hydrated, re-read the cart and adopt it — unless the customer has
+   * already changed something, in which case this snapshot is older than what
+   * they are looking at and must not overwrite it.
+   */
+  useEffect(() => {
+    if (!signedIn) return;
+    const startedAt = generation.current;
+    let cancelled = false;
+
+    fetch('/api/cart')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { cart?: CartDTO } | null) => {
+        if (!cancelled && data?.cart && generation.current === startedAt) commit(data.cart.lines);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn, commit]);
+
   /**
    * Writes are chained rather than fired in parallel: two rapid taps would
    * otherwise race, and whichever response landed last would win regardless of
@@ -97,6 +127,9 @@ export function CartProvider({
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(toPayload(next)),
+            // Let the write outlive the page: without this, navigating away or
+            // closing the tab mid-request can abort it.
+            keepalive: true,
           });
 
           if (!response.ok) {
@@ -134,6 +167,7 @@ export function CartProvider({
       const previous = linesRef.current;
       const next = transform(previous);
       if (next === previous) return;
+      generation.current += 1;
       commit(next);
       persist(next, () => commit(previous));
     },
