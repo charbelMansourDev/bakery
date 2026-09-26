@@ -73,18 +73,19 @@ npm run dev
 `/` and `/menu` are `force-dynamic`, so anything changed in the CMS is visible on
 the next page load with no rebuild.
 
-The cart is **client-side only** — no order is ever stored. It models one loaf:
-picking a different base loaf replaces the current one, while add-ons toggle.
-"Review Order" opens a WhatsApp chat with the order pre-filled; the number lives
-in `lib/config.ts`.
+Every ordered item carries its own loaf: an order is a list of lines, each a
+plain loaf or a topping on the loaf the customer picked for it (see
+[Accounts and the cart](#accounts-and-the-cart)). The cart icon in the nav opens
+`/cart`. There is no checkout — "Review Order" opens a WhatsApp chat with the
+order pre-filled.
 
-The "Have an Idea?" form is front-end only. It shows a confirmation and keeps
-nothing.
+The "Have an Idea?" form also goes over WhatsApp: submitting opens a chat with
+the idea written in. Nothing is stored. Both use the number in `lib/config.ts`.
 
 ### CMS
 
 One admin. Log in at `/admin/login`, then manage products at `/admin/products`
-(add, edit, delete, replace images) and the Our Story photographs at
+(add, edit, delete, replace images) and the Our Story text and photographs at
 `/admin/story`.
 
 Auth is a signed JWT in an httpOnly cookie. `middleware.ts` does an optimistic
@@ -122,12 +123,45 @@ An account is required to order, so the cart itself requires sign-in: tapping a
 product while signed out redirects to `/account/login?from=…` and returns you
 afterwards. There is no guest cart and no merge step.
 
+### The shape of an order
+
+A cart is a list of lines. Each line is a loaf, optionally with one topping
+folded through it, priced as topping + loaf:
+
+| Line | Price |
+|---|---|
+| Multigrain $2.00 + Classic $4 | $6.00 |
+| Chocolate $3.00 + Whole Wheat $5 | $8.00 |
+| **Total** | **$14.00** |
+
+- **Each topping at most once** — Chocolate cannot be on both Classic and Whole
+  Wheat. Choosing the other loaf *moves* it.
+- **Each plain loaf at most once.**
+- **A loaf can appear on several lines** — a plain Classic and a
+  Multigrain-on-Classic are two different items.
+
+A line's key is its topping's id, or its loaf's id when plain. Product ids are
+unique across the menu, so the single rule "keys are unique" enforces both
+limits. The server rejects a duplicate outright rather than de-duplicating it:
+with two loaves for one topping, picking which one the customer meant would be a
+guess.
+
+### Storage
+
 The cart lives in MongoDB, one per customer, so it survives a reload and follows
 them between devices. It stores product *ids* and resolves them on read — a
-price edited in the CMS is immediately the price the customer sees, and a
-product deleted from the menu drops out of every cart holding it rather than
-lingering at a stale price. Writes replace the whole cart rather than sending a
-diff, so two rapid taps cannot interleave.
+price edited in the CMS is immediately the price the customer sees, and a line
+whose loaf or topping is deleted from the menu drops out (a topping line is never
+silently turned into a plain loaf).
+
+Writes replace the whole cart rather than sending a diff, so two rapid taps
+cannot interleave. The cost of that design is that a *stale* client could write
+an old cart back; so writes use `keepalive` (they survive the page unloading),
+and after hydration the client re-reads the cart and adopts it unless the
+customer has already changed something.
+
+Carts saved before per-line loaves (`{ base, addOns }`) read as empty, and the
+next write removes those fields.
 
 ### Why the two sessions cannot be confused
 
