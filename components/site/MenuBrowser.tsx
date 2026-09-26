@@ -47,7 +47,7 @@ export default function MenuBrowser({
       </div>
 
       {showBase && (
-        <section id="base-loaves" className="mx-auto max-w-6xl px-6 pb-16 lg:px-10">
+        <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-10">
           <SectionLabel>Base Loaves</SectionLabel>
           {base.length === 0 ? (
             <Empty what="base loaves" />
@@ -80,7 +80,7 @@ export default function MenuBrowser({
                 ) : (
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {savory.map((product) => (
-                      <AddOnCard key={product.id} product={product} />
+                      <AddOnCard key={product.id} product={product} bases={base} />
                     ))}
                   </div>
                 )}
@@ -95,7 +95,7 @@ export default function MenuBrowser({
                 ) : (
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {sweet.map((product) => (
-                      <AddOnCard key={product.id} product={product} />
+                      <AddOnCard key={product.id} product={product} bases={base} />
                     ))}
                   </div>
                 )}

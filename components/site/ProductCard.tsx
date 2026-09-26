@@ -5,7 +5,11 @@ import { formatCents } from '@/lib/money';
 import type { ProductDTO } from '@/types/product';
 import ProductImage from './ProductImage';
 
-/** Feature card for a base loaf. Selecting one replaces whatever base was chosen. */
+/**
+ * Feature card for a loaf. Its button orders the loaf *plain* — toppings pick
+ * their own loaf on the topping cards, so this is not "the loaf the toppings go
+ * on", and the label says so.
+ */
 export default function ProductCard({
   product,
   priority = false,
@@ -13,8 +17,8 @@ export default function ProductCard({
   product: ProductDTO;
   priority?: boolean;
 }) {
-  const { selectBase, isSelected } = useCart();
-  const selected = isSelected(product.id);
+  const { togglePlain, hasPlain } = useCart();
+  const selected = hasPlain(product.id);
 
   return (
     <article className="group overflow-hidden rounded-xl bg-cream-50 shadow-soft transition hover:shadow-soft-lg">
@@ -37,7 +41,7 @@ export default function ProductCard({
 
         <button
           type="button"
-          onClick={() => selectBase(product)}
+          onClick={() => togglePlain(product)}
           aria-pressed={selected}
           className={`mt-5 w-full rounded-lg border px-4 py-3 text-sm font-semibold tracking-wide transition ${
             selected
@@ -45,7 +49,7 @@ export default function ProductCard({
               : 'border-walnut/30 text-walnut hover:border-walnut hover:bg-walnut/5'
           }`}
         >
-          {selected ? 'Added to Order' : 'Add to Order'}
+          {selected ? 'Plain loaf added' : 'Add plain loaf'}
         </button>
       </div>
     </article>

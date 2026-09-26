@@ -13,7 +13,7 @@ export const metadata = { title: 'Your account · La Belle Fournée' };
 export default async function AccountPage() {
   const session = await requireCustomer('/account');
   const cart = await getCart(session.sub);
-  const items = cart.base ? [cart.base, ...cart.addOns] : cart.addOns;
+  const items = cart.lines;
 
   return (
     <>
@@ -45,14 +45,13 @@ export default async function AccountPage() {
           ) : (
             <>
               <ul className="mt-4 divide-y divide-cream-200">
-                {items.map((item) => (
-                  <li key={item.id} className="flex items-baseline justify-between gap-6 py-3">
-                    <span className="font-display text-lg text-walnut">{item.name}</span>
+                {items.map((line) => (
+                  <li key={line.key} className="flex items-baseline justify-between gap-6 py-3">
+                    <span className="font-display text-lg text-walnut">
+                      {line.addOn ? `${line.addOn.name} · ${line.base.name}` : `${line.base.name} · plain`}
+                    </span>
                     <span className="font-display text-lg text-gold">
-                      {formatCents(item.price, {
-                        signed: item.category !== 'base',
-                        compact: item.category === 'base',
-                      })}
+                      {formatCents(line.totalCents)}
                     </span>
                   </li>
                 ))}

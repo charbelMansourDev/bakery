@@ -3,13 +3,17 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { ProductDTO } from '@/types/product';
-import type { CartDTO } from '@/types/cart';
+import { makeLine, totalOf, type CartDTO, type CartLineDTO } from '@/types/cart';
 
 /**
  * The cart lives on the server, one per customer, so it survives a reload and
  * follows the customer between devices. This provider is a thin optimistic
  * layer over it: local state updates immediately, the write goes out behind it,
- * and a failed write rolls the local state back.
+ * and a failed write rolls back and re-syncs from the server.
+ *
+ * A cart is a list of lines — each a loaf, optionally with one topping. Each
+ * topping appears at most once, and so does each plain loaf; the helpers below
+ * keep it that way by construction, and lib/cart.ts enforces it again.
  *
  * Ordering requires an account, so a tap while signed out sends the customer to
  * sign in rather than quietly dropping the item.
@@ -17,15 +21,17 @@ import type { CartDTO } from '@/types/cart';
 
 type CartState = {
   signedIn: boolean;
-  base: ProductDTO | null;
-  addOns: ProductDTO[];
-  items: ProductDTO[];
+  lines: CartLineDTO[];
+  count: number;
   isEmpty: boolean;
   totalCents: number;
-  isSelected: (id: string) => boolean;
-  selectBase: (product: ProductDTO) => void;
-  toggleAddOn: (product: ProductDTO) => void;
-  removeItem: (id: string) => void;
+  /** The line a topping is in, if it has been ordered. */
+  lineForAddOn: (addOnId: string) => CartLineDTO | undefined;
+  hasPlain: (baseId: string) => boolean;
+  /** Adds the topping on this loaf — or, if it is already ordered, moves it to this loaf. */
+  setToppingLoaf: (addOn: ProductDTO, base: ProductDTO) => void;
+  togglePlain: (base: ProductDTO) => void;
+  removeLine: (key: string) => void;
   clear: () => void;
   pending: boolean;
   error: string | null;
@@ -33,8 +39,10 @@ type CartState = {
 
 const CartContext = createContext<CartState | null>(null);
 
-function totalOf(base: ProductDTO | null, addOns: ProductDTO[]): number {
-  return (base?.price ?? 0) + addOns.reduce((sum, item) => sum + item.price, 0);
+function toPayload(lines: CartLineDTO[]) {
+  return {
+    lines: lines.map((line) => ({ baseId: line.base.id, addOnId: line.addOn?.id ?? null })),
+  };
 }
 
 export function CartProvider({
@@ -49,10 +57,19 @@ export function CartProvider({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [base, setBase] = useState<ProductDTO | null>(initialCart.base);
-  const [addOns, setAddOns] = useState<ProductDTO[]>(initialCart.addOns);
+  const [lines, setLines] = useState<CartLineDTO[]>(initialCart.lines);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Mutations derive from this ref rather than from the render closure, so two
+   * taps that land before a re-render still build on each other.
+   */
+  const linesRef = useRef(lines);
+  const commit = useCallback((next: CartLineDTO[]) => {
+    linesRef.current = next;
+    setLines(next);
+  }, []);
 
   /**
    * Writes are chained rather than fired in parallel: two rapid taps would
@@ -61,8 +78,16 @@ export function CartProvider({
    */
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
+  /** After a failed write, adopt whatever the server actually holds. */
+  const resync = useCallback(async () => {
+    const response = await fetch('/api/cart').catch(() => null);
+    if (!response?.ok) return;
+    const data = (await response.json().catch(() => null)) as { cart?: CartDTO } | null;
+    if (data?.cart) commit(data.cart.lines);
+  }, [commit]);
+
   const persist = useCallback(
-    (nextBase: ProductDTO | null, nextAddOns: ProductDTO[], rollback: () => void) => {
+    (next: CartLineDTO[], rollback: () => void) => {
       setPending(true);
       setError(null);
 
@@ -71,27 +96,29 @@ export function CartProvider({
           const response = await fetch('/api/cart', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              baseId: nextBase?.id ?? null,
-              addOnIds: nextAddOns.map((item) => item.id),
-            }),
+            body: JSON.stringify(toPayload(next)),
           });
 
           if (!response.ok) {
             const data = await response.json().catch(() => ({}));
             rollback();
-            setError(data.error ?? 'Could not update your cart.');
+            setError(data.error ?? 'Could not update your order.');
             // The session can expire mid-visit; send them back to sign in.
-            if (response.status === 401) router.push('/account/login');
+            if (response.status === 401) {
+              router.push('/account/login');
+              return;
+            }
+            await resync();
           }
         })
-        .catch(() => {
+        .catch(async () => {
           rollback();
           setError('Could not reach the server. Check your connection.');
+          await resync();
         })
         .finally(() => setPending(false));
     },
-    [router],
+    [router, resync],
   );
 
   /** Returns false when the customer must sign in first. */
@@ -101,77 +128,70 @@ export function CartProvider({
     return false;
   }, [signedIn, router, pathname]);
 
-  const selectBase = useCallback(
-    (product: ProductDTO) => {
+  const mutate = useCallback(
+    (transform: (current: CartLineDTO[]) => CartLineDTO[]) => {
       if (!ensureSignedIn()) return;
-      const previous = base;
-      const next = previous?.id === product.id ? null : product;
-      setBase(next);
-      persist(next, addOns, () => setBase(previous));
+      const previous = linesRef.current;
+      const next = transform(previous);
+      if (next === previous) return;
+      commit(next);
+      persist(next, () => commit(previous));
     },
-    [base, addOns, ensureSignedIn, persist],
+    [ensureSignedIn, commit, persist],
   );
 
-  const toggleAddOn = useCallback(
-    (product: ProductDTO) => {
-      if (!ensureSignedIn()) return;
-      const previous = addOns;
-      const next = previous.some((item) => item.id === product.id)
-        ? previous.filter((item) => item.id !== product.id)
-        : [...previous, product];
-      setAddOns(next);
-      persist(base, next, () => setAddOns(previous));
-    },
-    [base, addOns, ensureSignedIn, persist],
+  const setToppingLoaf = useCallback(
+    (addOn: ProductDTO, base: ProductDTO) =>
+      mutate((current) => {
+        const index = current.findIndex((line) => line.addOn?.id === addOn.id);
+        if (index === -1) return [...current, makeLine(base, addOn)];
+        if (current[index].base.id === base.id) return current;
+        // Switching loaves keeps the line where it was in the order.
+        const next = current.slice();
+        next[index] = makeLine(base, addOn);
+        return next;
+      }),
+    [mutate],
   );
 
-  const removeItem = useCallback(
-    (id: string) => {
-      if (!ensureSignedIn()) return;
-      const previousBase = base;
-      const previousAddOns = addOns;
-      const nextBase = previousBase?.id === id ? null : previousBase;
-      const nextAddOns = previousAddOns.filter((item) => item.id !== id);
-      setBase(nextBase);
-      setAddOns(nextAddOns);
-      persist(nextBase, nextAddOns, () => {
-        setBase(previousBase);
-        setAddOns(previousAddOns);
-      });
-    },
-    [base, addOns, ensureSignedIn, persist],
+  const togglePlain = useCallback(
+    (base: ProductDTO) =>
+      mutate((current) =>
+        current.some((line) => !line.addOn && line.base.id === base.id)
+          ? current.filter((line) => !(!line.addOn && line.base.id === base.id))
+          : [...current, makeLine(base, null)],
+      ),
+    [mutate],
   );
 
-  const clear = useCallback(() => {
-    if (!ensureSignedIn()) return;
-    const previousBase = base;
-    const previousAddOns = addOns;
-    setBase(null);
-    setAddOns([]);
-    persist(null, [], () => {
-      setBase(previousBase);
-      setAddOns(previousAddOns);
-    });
-  }, [base, addOns, ensureSignedIn, persist]);
+  const removeLine = useCallback(
+    (key: string) => mutate((current) => current.filter((line) => line.key !== key)),
+    [mutate],
+  );
 
-  const value = useMemo<CartState>(() => {
-    const items = base ? [base, ...addOns] : addOns;
-    return {
+  const clear = useCallback(
+    () => mutate((current) => (current.length === 0 ? current : [])),
+    [mutate],
+  );
+
+  const value = useMemo<CartState>(
+    () => ({
       signedIn,
-      base,
-      addOns,
-      items,
-      isEmpty: items.length === 0,
-      totalCents: totalOf(base, addOns),
-      isSelected: (id: string) => base?.id === id || addOns.some((item) => item.id === id),
-      selectBase,
-      toggleAddOn,
-      removeItem,
+      lines,
+      count: lines.length,
+      isEmpty: lines.length === 0,
+      totalCents: totalOf(lines),
+      lineForAddOn: (addOnId: string) => lines.find((line) => line.addOn?.id === addOnId),
+      hasPlain: (baseId: string) => lines.some((line) => !line.addOn && line.base.id === baseId),
+      setToppingLoaf,
+      togglePlain,
+      removeLine,
       clear,
       pending,
       error,
-    };
-  }, [signedIn, base, addOns, selectBase, toggleAddOn, removeItem, clear, pending, error]);
+    }),
+    [signedIn, lines, setToppingLoaf, togglePlain, removeLine, clear, pending, error],
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

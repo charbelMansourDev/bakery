@@ -50,19 +50,22 @@ export const verifyCodeSchema = z.object({
   code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from your email.'),
 });
 
-export const cartReplaceSchema = z.object({
-  // An empty string means "no base loaf". Without collapsing it to null it
+const cartLineInputSchema = z.object({
+  baseId: z.string().trim().min(1, 'Every item needs a loaf.').max(64),
+  // An empty string means "plain loaf". Without collapsing it to null it
   // reaches Mongoose as '' and blows up the ObjectId cast with a 500 instead of
-  // simply clearing the base.
-  baseId: z
+  // simply meaning "no topping".
+  addOnId: z
     .string()
     .trim()
     .max(64)
     .nullable()
     .default(null)
     .transform((value) => value || null),
-  addOnIds: z
-    .array(z.string().trim().max(64).min(1))
-    .max(20)
-    .default([]),
 });
+
+export const cartReplaceSchema = z.object({
+  lines: z.array(cartLineInputSchema).max(30).default([]),
+});
+
+export type CartLineInput = z.infer<typeof cartLineInputSchema>;

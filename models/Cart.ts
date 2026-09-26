@@ -3,18 +3,32 @@ import mongoose, { Schema, type Model, type InferSchemaType } from 'mongoose';
 /**
  * One cart per customer, stored server-side.
  *
- * Product references rather than copies: a cart should reflect the menu as it
- * is now, so a price edited in the CMS is the price the customer sees. Items
- * that have since been deleted are dropped when the cart is read.
+ * A cart is a list of lines, and every line carries its own loaf: either a
+ * plain loaf, or a topping folded through the loaf the customer picked for it.
+ * "Multigrain on Classic" and "Chocolate on Whole Wheat" are two separate
+ * lines, each priced as topping + loaf.
  *
- * Mirrors the shape the UI has always used — one base loaf, any number of
- * distinct add-ons, each taken once.
+ * Product references rather than copies: a cart should reflect the menu as it
+ * is now, so a price edited in the CMS is the price the customer sees. Lines
+ * whose products have since been deleted are dropped when the cart is read.
+ *
+ * Uniqueness (each topping once, each plain loaf once) is enforced in
+ * lib/cart.ts rather than by an index — it is a rule about a line's key, which
+ * a Mongo unique index cannot express inside an embedded array.
  */
+const cartLineSchema = new Schema(
+  {
+    base: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    /** null for a plain loaf. */
+    addOn: { type: Schema.Types.ObjectId, ref: 'Product', default: null },
+  },
+  { _id: false },
+);
+
 const cartSchema = new Schema(
   {
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, unique: true },
-    base: { type: Schema.Types.ObjectId, ref: 'Product', default: null },
-    addOns: { type: [{ type: Schema.Types.ObjectId, ref: 'Product' }], default: [] },
+    lines: { type: [cartLineSchema], default: [] },
   },
   { timestamps: true },
 );
