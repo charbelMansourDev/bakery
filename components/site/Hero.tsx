@@ -24,7 +24,7 @@ export default function Hero() {
         <div className="max-w-xl text-center lg:text-left">
           <div className="flex items-center justify-center gap-3 lg:justify-start">
             <FleurDeLis className="h-4 w-4 text-gold" />
-            <span className="eyebrow text-gold">Maison Dorée · Est. 2026</span>
+            <span className="eyebrow text-gold">Est. 2026</span>
           </div>
 
           <h1 className="mt-6 font-display text-4xl leading-[1.15] text-cream sm:text-5xl lg:text-6xl">

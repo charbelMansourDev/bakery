@@ -34,7 +34,7 @@ export default function Footer() {
 
         <div className="mt-6 flex flex-col gap-3 text-sm text-cream/60 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            {BAKERY.email} · {BAKERY.phone} · {BAKERY.address}
+            {BAKERY.phone} · {BAKERY.address}
           </p>
           <p>
             © {new Date().getFullYear()} {BAKERY.legal}

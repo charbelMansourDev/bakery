@@ -48,7 +48,9 @@ export async function sendMail(options: {
   }
 
   await transporter().sendMail({
-    from: process.env.SMTP_FROM ?? `${BAKERY.name} <${BAKERY.email}>`,
+    // Default to the account we authenticate as: most SMTP providers reject or
+    // rewrite a From address that does not match the authenticated sender.
+    from: process.env.SMTP_FROM ?? `${BAKERY.name} <${process.env.SMTP_USER}>`,
     ...options,
   });
 }

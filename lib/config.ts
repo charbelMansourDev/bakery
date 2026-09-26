@@ -17,11 +17,10 @@ export const WHATSAPP_NUMBER =
 export const BAKERY = {
   name: 'La Belle Fournée',
   tagline: 'Artisan Bakery',
-  email: 'bonjour@labellefournee.com',
   phone: '+961 71 862 139',
   address: 'Main Road, Amioun',
   footerTagline: 'Pre-Order • Freshly Baked • Limited Batches',
-  legal: 'La Belle Fournée · Maison Dorée',
+  legal: 'La Belle Fournée',
   /** Instagram handle, without the @. The bakery has no other social accounts. */
   instagram: 'labellefournee',
 } as const;
